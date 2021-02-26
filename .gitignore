@@ -7,6 +7,9 @@ bin-release/
 # Other files and folders
 .settings/
 
+# Exclude my sensitive files/folders
+sha.txt
+
 # Executables
 *.swf
 *.air
