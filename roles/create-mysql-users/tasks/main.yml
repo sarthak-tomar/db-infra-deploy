@@ -1,0 +1,62 @@
+---
+# tasks file for create-mysql-users
+- name:  "creating {{app_user}} user"
+  mysql_user:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{app_user}}"
+    host: "{{ item }}"
+    password: "{{app_pass}}"
+    priv: "{{db_name}}.*:{{app_permission}}"
+    state: present
+  with_items: 
+         - "{{app_host1}}"
+         - "{{app_host2}}"
+  when: "'master_db1' in inventory_hostname"
+
+- name:  "creating {{report_user}} user" 
+  mysql_user:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{report_user}}"
+    host: "{{ item }}"
+    password: "{{report_pass}}"
+    priv: "{{db_name}}.*:{{report_permission}}"
+    state: present
+  with_items:
+         - "{{app_host1}}"
+         - "{{app_host2}}"
+  when: "'master_db1' in inventory_hostname"
+
+- name:  "creating {{backup_user}} user for Backup & Monitoring"
+  mysql_user:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{backup_user}}"
+    host: "{{ item }}"
+    password: "{{backup_pass}}"
+    priv: "*.*:{{backup_permission}}"
+    state: present
+  with_items:
+         - "{{app_host1}}"
+         - "{{app_host2}}"
+  when: "'master_db1' in inventory_hostname"
+
+- name: "Modifying Backup User with REQUIRE SSL"
+  mysql_user:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{backup_user}}"
+    host: "{{ item }}"
+    append_privs: true
+    priv: '*.*:REQUIRESSL'
+    state: present
+  with_items:
+         - "{{app_host1}}"
+         - "{{app_host2}}"
+  when: "'master_db1' in inventory_hostname"
+

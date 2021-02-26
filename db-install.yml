@@ -1,0 +1,20 @@
+--- 
+ - hosts: dbservers
+   become: yes
+   vars_files:
+         - 'commons/variables.yml'
+   roles: 
+     - role: install-mysql
+       tags: install
+
+     - role: configure-mysql
+       tags: config
+
+     - role: ha-setup
+       tags: replication
+  
+     - role: create-mysql-users
+       tags: users
+
+     - role: db-migration
+       tags: migrate

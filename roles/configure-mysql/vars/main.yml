@@ -1,0 +1,11 @@
+---
+# vars file for configure-mysql
+# client_name : Nokia-Latin
+# mysql_config_file : /etc/my.cnf
+# old_datadir : /var/lib/mysql 
+# datadir : /var/storage/data/mysql
+# bin_log : /var/storage/binlog
+# error_log : /var/log/mysqld
+# mysql_tmp : /tmp/secure-path/mysql-files
+# mysql_port : 3344
+# mysql_host : 10.142.0.7 

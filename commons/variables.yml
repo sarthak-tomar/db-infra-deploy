@@ -1,0 +1,81 @@
+---
+  client_name: Nokia-Latin
+  mysql_config_file: /etc/my.cnf
+  old_datadir: /var/lib/mysql
+  datadir: /var/storage/data/mysql
+  bin_log: /var/storage/binlog
+  error_log: /var/log/mysqld
+  mysql_tmp: /tmp/secure-path/mysql-files
+  mysql_port: 3399
+  mysql_host: 10.142.0.9
+  mysql_admin: root
+  mysql_secret: P@ssW0rdDbA123
+
+# DB SERVER HOST
+  master_db1 : 10.142.0.9
+  master_db2 : 10.148.0.2
+
+# APP SERVER HOST
+  app_host1 : 10.148.0.2
+  app_host2 : localhost
+
+# HA CONFIG
+  HA_user : replication
+  HA_user_pass : R3pliCat10n_S3rvice
+  HA_permission : REPLICATION SLAVE
+  HA_host : 127.0.0.1
+# Database NAME
+  db_name : siteforge
+  dump_file : /etc/ansible/data/sf-latin.sql   
+
+# DATABASE USERS
+  app_user : Application
+  app_pass : n0kia-InDiA-@pp_DB
+  app_permission : SELECT,INSERT,UPDATE,DELETE,DROP,CREATE,REFERENCES,INDEX,ALTER,EXECUTE,CREATE VIEW,SHOW VIEW,CREATE ROUTINE,ALTER ROUTINE,TRIGGER
+  report_user : Reporting
+  report_pass : n0kia-InDiA-Bi_DB
+  report_permission : SELECT,INSERT,UPDATE,DELETE,EXECUTE
+# BACKUP
+  backup_user: Backup
+  backup_pass: B@ckUp-$F-N0k!@
+  backup_permission: SELECT,RELOAD,LOCK TABLES,SHOW VIEW,EVENT,REPLICATION CLIENT,TRIGGER
+  backupscript : /etc/ansible/data/db-backup.sh
+  backuppath: /home/centos/appdata/DB-Backup
+  shc_url : http://www.datsi.fi.upm.es/~frosal/sources/shc-3.8.9b.tgz
+  shc_path : /etc/shc/
+  shc_version : shc-3.8.9b
+  encrypt_path : /usr/etc/
+# MONITORING
+  monitorscript : /etc/ansible/data/monitoring.sh
+ 
+# MAIL BODY
+  fromemail: sarthak.tomar@innoeye.com
+  mypass: *******
+  toemail: sarthak.tomar0@gmail.com
+  ccemail: 
+  mail_body: "<p><h3>Mysql Installation & Database Setup</h3></p>
+
+<p> - Mysql Installation on Master1 &amp; Master2.<br />
+ - Mysql Default Configuration Changed.<br />
+ - Mysql Replication Setup between Master1 &amp; Master2.<br />
+ - Database User Creation For Application &amp; Reporting<br />
+ - Database dump imported to Master1.<br />
+ - Haproxy Setup on App1 &amp; App2 Server.<br />
+ <br />
+<h4> NOTE: Please Find DB credentials</h4><br />
+ -APP </p>
+
+<p> DB_USER : {{app_user}}<br />
+ PASSWD : {{app_pass}}<br />
+ HOST : 127.0.0.1<br />
+ PORT : {{mysql_port}}<br />
+ DB_NAME : {{db_name}}</p>
+
+<p> -BI</p>
+
+<p> DB_USER : {{report_user}}<br />
+ PASSWD : {{report_pass}}<br />
+ HOST : 127.0.0.1<br />
+ PORT : {{mysql_port}}<br />
+ DB_NAME : {{db_name}}&quot;<br />
+</p>"

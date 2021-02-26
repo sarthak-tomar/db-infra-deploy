@@ -1,0 +1,41 @@
+---
+- name: Remove Existed Mysql
+  yum: name=mysql* state=absent
+
+- name: Remove unwanted files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: 
+          - "/etc/my.cnf"
+          - "/etc/my.cnf.rpmsave"
+          - "/var/log/mysqld.log"
+          - "/var/lib/mysql"
+          - "/var/storage/data"
+          - "/var/log/mysqld"
+
+- name: Download Mysql repos.
+  get_url: url=https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm dest=/tmp
+
+- name: Install Mysql repos.
+  yum:
+    name: /tmp/mysql57-community-release-el7-9.noarch.rpm
+    state: present
+
+- name: Mysql-Server Installation.
+  yum:
+    name: ['mysql-community-server', 'MySQL-python', 'libselinux-python']
+    state: installed
+
+- name: Starting Mysql Service
+  service: name=mysqld state=started enabled=yes
+
+- name: Reset Mysql Password
+  shell: |
+     password_match=`awk '/A temporary password is generated for/ {a=$0} END{ print a }' /var/log/mysqld.log | awk '{print $(NF)}'`;
+     mysql -uroot -p$password_match --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{mysql_secret}}'; 
+     flush privileges; "
+#  notify: Restarting
+- name: ReStarting Mysql Service
+  service: name=mysqld state=restarted 
+

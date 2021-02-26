@@ -1,0 +1,144 @@
+---
+# tasks file for configure-mysql
+- name: Disable SELINUX
+  selinux: state=disabled
+
+- name: Creating database directory
+  file: dest="{{datadir}}" mode=700 owner=mysql group=mysql state=directory
+
+- name: Creating BinaryLog directory
+  file: path="{{bin_log}}" mode=760  owner=mysql group=mysql state=directory
+
+- name: Creating ErrorLog path
+  file: dest="{{error_log}}" owner=mysql group=mysql state=directory
+
+- name: Creating ErrorLog
+  file: path="{{error_log}}/{{client_name}}-{{inventory_hostname}}-Error.log" mode=660  owner=mysql group=mysql state=touch
+  when: inventory_hostname == "master_db1"
+
+- name: Creating ErrorLog
+  file: path="{{error_log}}/{{client_name}}-{{inventory_hostname}}-Error.log" mode=660  owner=mysql group=mysql state=touch
+  when: inventory_hostname == "master_db2"
+
+- name: Creating Mysql-temp path
+  file: dest="{{mysql_tmp}}" mode=760 owner=mysql group=mysql state=directory
+
+- name: Stop Mysql Service.
+  service: name=mysqld state=stopped
+
+- name: Moving datadir to new path
+  shell: rsync -r  "{{old_datadir}}/"  "{{datadir}}";  chown -R mysql:mysql "{{datadir}}" ; 
+
+- name: Assign Permission to Data directory
+  shell: chown -R mysql:mysql "{{datadir}}"
+
+- name: Modifying configuration file
+  lineinfile:
+      dest: "{{mysql_config_file}}"
+      regexp: '^datadir='
+      line: "datadir={{datadir}}"
+
+- name: Modifying configuration file
+  lineinfile:
+      dest: "{{mysql_config_file}}"
+      regexp: '^log-error='
+      line: "log-error={{error_log}}/{{client_name}}-{{inventory_hostname}}-Error.log"
+  when: inventory_hostname == "master_db1"
+
+- name: Modifying configuration file
+  lineinfile:
+      dest: "{{mysql_config_file}}"
+      regexp: '^log-error='
+      line: "log-error={{error_log}}/{{client_name}}-{{inventory_hostname}}-Error.log"
+  when: inventory_hostname == "master_db2"
+
+- name: Modifying configuration file
+  lineinfile:
+      dest: "{{mysql_config_file}}"
+      regexp: '^socket='
+      line: "socket={{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+  when: inventory_hostname == "master_db1"
+
+- name: Modifying configuration file
+  lineinfile:
+      dest: "{{mysql_config_file}}" 
+      regexp: '^socket='
+      line: "socket={{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+  when: inventory_hostname == "master_db2"
+
+- name: "Adding {{inventory_hostname}} specific parameters " 
+  lineinfile:
+        dest: "{{mysql_config_file}}"
+        line: "{{ item }}"
+  with_items:
+              - "bind-address        = {{master_db1}}"
+              - "server_id           = 1"
+              - "auto-increment-increment = 2"
+              - "auto-increment-offset = 1"
+  when: inventory_hostname == "master_db1"
+
+- name:  "Adding {{inventory_hostname}} specific parameters "
+  lineinfile:
+        dest: "{{mysql_config_file}}"
+        line: "{{ item }}"
+  with_items:
+              - "bind-address        = {{master_db2}}"
+              - "server_id           = 2"
+              - "auto-increment-increment = 2"
+              - "auto-increment-offset = 2"
+  when: inventory_hostname == "master_db2"
+
+- name: Adding mysql parameters
+  lineinfile:
+        dest: "{{mysql_config_file}}"
+        line: "{{ item }}"
+  with_items:
+              - "port                = {{mysql_port}}  "
+              - "log_bin             = {{bin_log}}/mysql-bin.log"
+              - "log_bin_index       = {{bin_log}}/mysql-bin.log.index"
+              - "relay_log           = {{bin_log}}/mysql-relay-bin"
+              - "relay_log_index     = {{bin_log}}/mysql-relay-bin.index"
+              - "expire_logs_days    = 3"
+              - "binlog_format       = MIXED"
+              - "max_binlog_size     = 100M"
+              - "log_slave_updates   = 1"
+              - "slave-skip-errors= 1062,1146,1215,1072,1265"
+              - "max_allowed_packet=1024M"
+              - "max_connections = 2100"
+              - "max_user_connections = 250"
+              - "character_set_server=utf8"
+              - "collation_server=utf8_general_ci"
+              - "group_concat_max_len = 1000000"
+              - "#INNODB ENGINE"
+              - "innodb_buffer_pool_size = 4G"
+              - "innodb_buffer_pool_instances = 8"
+              - "innodb_flush_method     = O_DIRECT"
+              - "innodb_old_blocks_pct   = 50"
+              - "innodb_old_blocks_time  = 0"
+              - "net_read_timeout=30"
+              - "interactive_timeout=1800"
+              - "connect_timeout=10"
+              - "innodb_temp_data_file_path = ibtmp1:12M:autoextend:max:5G"
+              - "sql_mode=NO_AUTO_CREATE_USER,STRICT_ALL_TABLES"
+              - "local-infile=0"
+              - "skip-grant-tables = FALSE"
+              - "master_info_repository=TABLE"
+              - "relay_log_info_repository=TABLE"
+              - "allow-suspicious-udfs=FALSE"
+              - "log-raw=OFF"
+              - "innodb_print_all_deadlocks = 1"
+              - "#PASSWORD POLICY"
+              - "validate_password=FORCE_PLUS_PERMANENT"
+              - "validate_password_length=14"
+              - "validate_password_mixed_case_count=1"
+              - "validate_password_number_count=1"
+              - "validate_password_special_char_count=1"
+              - "validate_password_policy=MEDIUM"
+              - "[mysqldump]"
+              - "max_allowed_packet = 1024M"
+              - "[client]"
+              - "socket = {{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+#  notify: Restarting 
+- name: Restarting Mysql Service
+  service: name=mysqld state=restarted
+

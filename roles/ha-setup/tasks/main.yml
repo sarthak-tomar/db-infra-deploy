@@ -1,0 +1,46 @@
+---
+# tasks file for ha-setup
+- name:  "creating {{HA_user}} user"
+  mysql_user:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{HA_user}}"
+    host: "{{master_db2}}"
+    password: "{{HA_user_pass}}"
+    priv: "*.*:{{HA_permission}}"
+    state: present
+  when: "'master_db1' in inventory_hostname"
+
+- name:  "creating {{HA_user}} user"
+  mysql_user:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{HA_user}}"
+    host: "{{master_db1}}"
+    password: "{{HA_user_pass}}"
+    priv: "*.*:{{HA_permission}}"
+    state: present
+  when: "'master_db2' in inventory_hostname"
+
+- name: "RESET MASTER2" 
+  command: | 
+            mysql -u"{{mysql_admin}}" -p"{{mysql_secret}}" -e "reset master; " 
+  when: "'master_db2' in inventory_hostname"
+
+- name: "setup master1 ---> master2 replication"
+  command: |
+            mysql -u"{{mysql_admin}}" -p"{{mysql_secret}}" -e "STOP SLAVE; CHANGE MASTER TO MASTER_HOST='{{master_db2}}' , master_port={{mysql_port}}  , MASTER_USER='{{HA_user}}', MASTER_PASSWORD='{{HA_user_pass}}', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=154; START SLAVE;"
+  when: "'master_db1' in inventory_hostname"
+
+- name: "RESET MASTER1" 
+  command: |  
+            mysql -u"{{mysql_admin}}" -p"{{mysql_secret}}" -e "reset master; "                           
+  when: "'master_db1' in inventory_hostname"
+
+- name: "setup master2 ---> master1 replication"
+  command: | 
+            mysql -u"{{mysql_admin}}" -p"{{mysql_secret}}" -e "  STOP SLAVE; CHANGE MASTER TO MASTER_HOST='{{master_db1}}',  master_port={{mysql_port}}  ,MASTER_USER='{{HA_user}}', MASTER_PASSWORD='{{HA_user_pass}}', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=154; START SLAVE;"
+  when: "'master_db2' in inventory_hostname"
+

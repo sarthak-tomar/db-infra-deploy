@@ -1,0 +1,34 @@
+---
+- name: Installing Mysql monitoring
+  copy:
+     src: "{{ monitorscript }}"
+     dest: "{{shc_path}}/{{shc_version}}/dmb"
+     owner: root
+     group: root
+     mode: 700
+     remote_src: yes
+  when: "'app_host1' in inventory_hostname"
+
+- name: Encrypting monitoring script
+  script:  "{{shc_path}}/{{shc_version}}/shc -f {{shc_path}}/{{shc_version}}/dmb/monitoring.sh"
+  when: "'app_host1' in inventory_hostname"
+
+- name: moving backup file
+  copy:
+    src: "{{shc_path}}/{{shc_version}}/dmb/monitoring.sh.x"
+    dest: "{{encrypt_path}}"
+    owner: root
+    group: root
+    mode: 700
+    remote_src: yes
+  when: "'app_host1' in inventory_hostname"
+
+- name: Schedule monitoring
+  cron:  
+    name: Mysql Monitoring JOB
+    minute: "*/5"
+    user: "root"
+    job: "{{encrypt_path}}monitoring.sh.x >> {{backuppath}}/logs/{{client_name}}_monitoring.log 2>&1 "
+  when: "'app_host1' in inventory_hostname"
+
+

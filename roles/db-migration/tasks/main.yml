@@ -1,0 +1,39 @@
+---
+# tasks file for db-migration
+- name: "create database on {{master_db1}}"
+  mysql_db: 
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"      
+    name: "{{db_name}}" 
+    state: present
+  when: "'master_db1' in inventory_hostname"
+
+- name: "Copy database dump file to {{master_db1}}"
+  copy:
+     src: "{{dump_file}}"
+     dest: /tmp
+  when: "'master_db1' in inventory_hostname"
+
+- name: "Importing dump file to {{db_name}} db"
+  mysql_db:
+    login_user: "{{mysql_admin}}"
+    login_password: "{{mysql_secret}}"
+    login_unix_socket: "{{datadir}}/{{client_name}}-{{inventory_hostname}}.sock"
+    name: "{{db_name}}" 
+    state: import 
+    target: /tmp/sf-latin.sql
+  when: "'master_db1' in inventory_hostname"
+
+- name: Task Performed Report
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: "{{ fromemail }}"
+    password: "{{ mypass }}"
+    to: "{{ toemail }}"
+#    cc: "{{ ccemail }}"
+    subject: "{{ client_name }} Database Setup" 
+    body: "{{mail_body}}"
+    subtype: html
+  when: "'master_db1' in inventory_hostname"

@@ -1,0 +1,60 @@
+---
+- name: Backup pre-requisites
+  yum: 
+    name: ['make', 'gcc', 'gcc-c++', 'kernel-devel']
+    state: present
+
+- name: setup path
+  file: dest=/etc/shc mode=755 owner=root group=root state=directory
+
+- name: Installing shc 
+  get_url: url="{{shc_url}}"  dest=/etc/shc/
+- unarchive: src="{{shc_path}}/{{shc_version}}.tgz"  dest=/etc/shc/
+- make: chdir="{{shc_path}}/{{shc_version}}"
+- file: dest="{{shc_path}}/{{shc_version}}/dmb"  mode=700 owner=root group=root state=directory
+
+- name: Installing backup
+  copy: 
+     src: "{{ backupscript }}"
+     dest: "{{shc_path}}/{{shc_version}}/dmb"
+     owner: root
+     group: root
+     mode: 700
+     remote_src: yes
+  when: "'app_host1' in inventory_hostname"
+
+- name: Encrypting backup script
+  script: "{{shc_path}}/{{shc_version}}/shc  -f {{shc_path}}/{{shc_version}}/dmb/db-backup.sh"
+  when: "'app_host1' in inventory_hostname"   
+
+- name: moving backup file
+  copy: 
+    src: "{{shc_path}}/{{shc_version}}/dmb/db-backup.sh.x"
+    dest: "{{encrypt_path}}"
+    owner: root
+    group: root
+    mode: 700
+    remote_src: yes
+  when: "'app_host1' in inventory_hostname"
+
+- name: "Creating Backup Directory"
+  file: 
+    dest: "{{ item }}"
+    mode: 750
+    owner: root
+    group: root
+    state: directory
+  with_items:
+         - "{{backuppath}}/Daily"
+         - "{{backuppath}}/Weekly"
+         - "{{backuppath}}/logs"
+
+- name: Scheduling DB Backup
+  cron: 
+    name: Database Backup JOB
+    minute: "0"
+    hour: "01"
+    user: "root"
+    job: "{{encrypt_path}}db-backup.sh.x >>  {{backuppath}}/logs/{{client_name}}_Backup.log 2>&1"
+  when: "'app_host1' in inventory_hostname"
+

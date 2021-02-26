@@ -1,0 +1,54 @@
+---
+
+- name: Disable SELINUX
+  selinux: state=disabled
+
+- name: "Installing HAProxy on {{ inventory_hostname }}"
+  yum: 
+    name: [ 'haproxy' , 'mysql' ] 
+    state: present
+
+- name: "Backup haproxy Configuration file"
+  copy: src=/etc/haproxy/haproxy.cfg dest=/etc/haproxy/haproxy.cfg.bak remote_src=yes
+
+- name: "Configuring HAProxy"
+  copy: src=/dev/null dest=/etc/haproxy/haproxy.cfg remote_src=yes
+
+- name: "Modifying configuration file"
+  lineinfile:
+        dest: /etc/haproxy/haproxy.cfg
+        line: "{{ item }}"
+  with_items:
+        - "global"
+        - "    log 127.0.0.1 local2"
+        - "    maxconn 2000"
+        - "    user haproxy"
+        - "    group haproxy"        
+        - "defaults"
+        - "    log     global"
+        - "    mode    tcp"
+        - "    option  tcplog"
+        - "    option  dontlognull"
+        - "    retries 6"
+        - "    maxconn  2000"
+        - "    option redispatch"
+        - "    timeout connect  6000000"
+        - "    timeout client   6000000"
+        - "    timeout server   6000000"
+        - "listen mysql-cluster"
+        - "    bind {{ HA_host }}:{{ mysql_port }}"
+        - "    mode tcp"
+        - "    balance roundrobin"
+        - "    server Master-1 {{ master_db1 }}:{{ mysql_port }} check inter 5s fall 3 rise 99999999"
+        - "    server Master-2 {{ master_db2 }}:{{ mysql_port }} check backup"
+
+- name: Restarting Haproxy
+  service: name=haproxy state=restarted  
+
+#- name: Checking DB connectivity through APP  Server using HAProxy
+#  shell: mysql -u "{{app_user}}" -p "{{app_pass}}"  -h "{{ HA_host }}" -p "{{ mysql_port }}" -e "SELECT @@server_id;"
+#  register: dbstatus
+
+#- name: Login Status
+#  debug:
+#    msg: dbstatus.stdout_lines

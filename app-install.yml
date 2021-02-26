@@ -1,0 +1,12 @@
+---
+ - hosts: appservers
+   become: yes
+   vars_files:
+         - 'commons/variables.yml'
+   roles:
+     - role: install-haproxy
+       tags: haproxy
+     - role: install-backup
+       tags: backup
+     - role: install-monitoring
+       tags: monitor

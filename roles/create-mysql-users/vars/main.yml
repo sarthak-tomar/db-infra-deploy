@@ -1,0 +1,13 @@
+---
+# vars file for create-mysql-users
+# app_host1 : 10.142.0.7  
+# app_host2 : localhost
+# db_name : siteforge
+
+# app_user : Application
+# app_pass : n0kia-InDiA-@pp_DB
+# app_permission : SELECT,INSERT,UPDATE,DELETE,DROP,CREATE,REFERENCES,INDEX,ALTER,EXECUTE,CREATE VIEW,SHOW VIEW,CREATE ROUTINE,ALTER ROUTINE,TRIGGER
+# report_user : Reporting
+# report_pass : n0kia-InDiA-Bi_DB
+# report_permission : SELECT,INSERT,UPDATE,DELETE,EXECUTE
+
