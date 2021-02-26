@@ -8,7 +8,7 @@ bin-release/
 .settings/
 
 # Exclude my sensitive files/folders
-sha.txt
+./sha.txt
 
 # Executables
 *.swf
